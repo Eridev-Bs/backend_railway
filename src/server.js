@@ -57,24 +57,44 @@ app.use((req, res) => {
 });
 
 // Database connection and server start
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 const startServer = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('✅ Conexión a base de datos establecida');
+  const maxRetries = 10;
+  let retries = 0;
 
-    // Sync database (solo en desarrollo)
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ Modelos sincronizados');
+  while (retries < maxRetries) {
+    try {
+      console.log(`🔄 Intento ${retries + 1}/${maxRetries} - Conectando a base de datos...`);
+      
+      await sequelize.authenticate();
+      console.log('✅ Conexión a base de datos establecida');
+
+      // Sync database (solo en desarrollo)
+      if (process.env.NODE_ENV === 'development') {
+        await sequelize.sync({ alter: true });
+        console.log('✅ Modelos sincronizados');
+      }
+
+      app.listen(PORT, () => {
+        console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+        console.log(`📝 Ambiente: ${process.env.NODE_ENV}`);
+      });
+      
+      return; // Salir del loop si la conexión fue exitosa
+    } catch (error) {
+      retries++;
+      if (retries >= maxRetries) {
+        console.error('❌ Error al iniciar servidor después de múltiples intentos:', error.message);
+        console.error('💡 Verifica que:');
+        console.error('   1. La base de datos MySQL esté creada en Railway');
+        console.error('   2. Las variables MYSQL* estén configuradas');
+        console.error('   3. El servicio MySQL esté corriendo');
+        process.exit(1);
+      }
+      console.log(`⏳ Esperando 3 segundos antes de reintentar...`);
+      await sleep(3000);
     }
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-      console.log(`📝 Ambiente: ${process.env.NODE_ENV}`);
-    });
-  } catch (error) {
-    console.error('❌ Error al iniciar servidor:', error);
-    process.exit(1);
   }
 };
 
