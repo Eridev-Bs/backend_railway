@@ -12,7 +12,8 @@
     "start": "node src/server.js",
     "build": "echo 'No build needed'",
     "migrate": "node src/database/migrate.js",
-    "seed": "node src/database/seed.js"
+    "seed": "node src/database/seed.js",
+    "check-env": "node check-env.js"
   },
   "keywords": ["cotizador", "api", "express", "nodejs"],
   "author": "Virtual Back Office",
